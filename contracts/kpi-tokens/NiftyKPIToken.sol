@@ -10,6 +10,8 @@ import "../interfaces/kpi-tokens/IKPIToken.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
+import "@openzeppelin/contracts/utils/Counters.sol";
+
 /**
  * @title NiftyKPIToken
  * @dev NiftyKPIToken contract
@@ -53,6 +55,10 @@ contract NiftyKPIToken is
     error NotInitialized();
     error OraclesNotInitialized();
     error InvalidDescription();
+
+    using Counters for Counters.Counter;
+
+    Counters.Counter private _tokenIdCounter;
 
     event Initialize(
         address creator,
@@ -133,6 +139,25 @@ contract NiftyKPIToken is
             _erc20Symbol,
             _erc20Supply
         );
+    }
+
+    // The following functions are overrides required by Solidity.
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override(ERC721, ERC721Enumerable) {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 
     function initializeOracles(address _oraclesManager, bytes memory _data)
@@ -331,7 +356,9 @@ contract NiftyKPIToken is
                 collaterals.length
             );
         for (uint256 _i = 0; _i < numTokens; _i++) {
-            _mint(msg.sender, incrementor.current());
+            uint256 tokenId = _tokenIdCounter.current();
+            _tokenIdCounter.increment();
+            _safeMint(to, tokenId);
         }
         //emit Redeem(_kpiTokenBalance, _redeemedCollaterals); //change to id
     }
